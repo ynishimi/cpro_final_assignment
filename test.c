@@ -11,7 +11,7 @@ void print(int m, int n, const float * x)
         }
     }
 }
-
+// テスト
 int main()
 {
     print(1, 10, b_784x10);
