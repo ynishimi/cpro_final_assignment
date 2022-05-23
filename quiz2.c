@@ -11,7 +11,7 @@ void fc(int m, int n, const float *x, const float *A, const float *b, float *y)
         //それぞれの要素についての計算
         for (j = 0; j < n; j++)
         {
-            y[i] += A[n * i + j];
+            y[i] += A[n * i + j] * x[j];
         }
     }
 }
