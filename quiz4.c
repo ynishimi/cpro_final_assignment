@@ -7,6 +7,8 @@ void softmax(int n, const float *x, float *y)
     max_x = 0;
     sum = 0;
     float exp_x[n];
+
+    //max_x求める
     for (i = 0; i < n; i++)
     {
         if (max_x < x[i])
@@ -14,6 +16,8 @@ void softmax(int n, const float *x, float *y)
             max_x = x[i];
         }
     }
+
+    //分子を計算
     for (j = 0; j < n; j++)
     {
         exp_x[j] = exp(x[j] - max_x);
