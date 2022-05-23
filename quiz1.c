@@ -1,6 +1,6 @@
 #include "nn.h"
 
-//行列を表示する
+//行列を表示する (quiz1.c)
 void print(int m, int n, const float * x)
 {
     int i, j, count;
@@ -9,7 +9,7 @@ void print(int m, int n, const float * x)
     {
         for(j = 0; j < n; j++)
         {
-            printf("%f ", x[count]);
+            printf("%7.4f ", x[count]);
             count++;
         }
         putchar('\n');
@@ -19,6 +19,6 @@ void print(int m, int n, const float * x)
 int main()
 {
 
-    print(2, 5, b_784x10);
+    print(1, 10, b_784x10);
   return 0;
 }
