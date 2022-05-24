@@ -3,7 +3,8 @@
 //式(4) を計算(quiz4.c)
 void softmax(int n, const float *x, float *y)
 {
-    int i, j, k, max_x, sum;
+    int i, j, k;
+    float max_x, sum;
     max_x = 0;
     sum = 0;
     float exp_x[n];
@@ -91,6 +92,7 @@ int main()
 
     fc(10, 784, train_x, A_784x10, b_784x10, y);
     relu(10, y, y);
+        print(1, 10, y); //test i relu works correctly
     softmax(10, y, y);
     print(1, 10, y);
 
