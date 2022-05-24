@@ -1,0 +1,1 @@
+void relu_bwd(int n, const float * x, const float * dEdy, float * dEdx);
