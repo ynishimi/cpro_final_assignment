@@ -3,7 +3,8 @@
 //式(4) を計算(quiz4.c)
 void softmax(int n, const float *x, float *y)
 {
-    int i, j, k, max_x, sum;
+    int i, j, k;
+    float max_x, sum;
     max_x = 0;
     sum = 0;
     float exp_x[n];
