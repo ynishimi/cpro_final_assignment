@@ -1,8 +1,6 @@
-#include "nn.h"
-
 void softmaxwithloss_bwd(int n, const float *y, unsigned char t, float *dEdx)
 {
-
+    //ここでxはSoftmaxに入ってくる10個の数、yは出力（10個）
     //t は正解の時だけ1でそれ以外は0だから、出力のうち正解の時だけ1引く
     for (int i = 0; i < 10; i++)
     {
@@ -15,10 +13,4 @@ void softmaxwithloss_bwd(int n, const float *y, unsigned char t, float *dEdx)
             dEdx[i] = y[i] - 0;
         }
     }
-}
-
-int main()
-{
-
-    return 0;
 }
