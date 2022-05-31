@@ -112,13 +112,9 @@ int main()
                &test_x, &test_y, &test_count,
                &width, &height);
 
-    //処理
-    int ans = inference3(A_784x10, b_784x10, train_x);
-    printf("%d %d\n", ans, train_y[0]);
-
     //正解率(quiz7.c)
     int sum = 0;
-    for (i = 0; i < test_count; i++)
+    for (int i = 0; i < test_count; i++)
     {
         if (inference3(A_784x10, b_784x10, test_x + i * width * height) == test_y[i])
         {

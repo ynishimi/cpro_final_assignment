@@ -1,6 +1,6 @@
 #include "nn.h"
 
-/*(行列の表示は無効にしている)
+/*(z)
 
 //行列を表示する (quiz1.c)
 void print(int m, int n, const float *x)
