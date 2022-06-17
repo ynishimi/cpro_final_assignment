@@ -1,7 +1,5 @@
 #include "nn.h"
 
-/*(z)
-
 //行列を表示する (quiz1.c)
 void print(int m, int n, const float *x)
 {
@@ -18,7 +16,6 @@ void print(int m, int n, const float *x)
     }
 }
 
-*/
 
 //式 (1) を計算する (quiz2.c)
 void fc(int m, int n, const float *x, const float *A, const float *b, float *y)
@@ -94,6 +91,8 @@ int inference3(const float *A, const float *b, const float *x)
             ans = i;
         }
     }
+
+        print(1, 10, y);
     return ans;
 }
 
@@ -113,7 +112,8 @@ int main()
                &width, &height);
 
     //処理
-    int ans = inference3(A_784x10, b_784x10, train_x);
+    int ans = inference3(A_784x10, b_784x10, train_x+784*8);
+    
     printf("%d %d\n", ans, train_y[0]);
     return 0;
 }
