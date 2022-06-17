@@ -1,26 +1,32 @@
 #include "nn.h"
 
+#define NUMBER_A_ROW 10
+#define NUMBER_A_COLUMN 784
+#define NUMBER_FC_X 10
+#define NUMBER_RELU_X 10
+#define NUMBER_ANS 10
+
 //行列を表示する (quiz1.c)
 void print(int m, int n, const float *x)
 {
-    int i, j, count;
-    count = 0;
+    int i, j;
+
     for (i = 0; i < m; i++)
     {
         for (j = 0; j < n; j++)
         {
-            printf("%7.4f ", x[count]);
-            count++;
+            printf("%7.4f ", x[j]);
+
         }
         putchar('\n');
     }
 }
 
-
-//式 (1) を計算する (quiz2.c)
-void fc(int m, int n, const float *x, const float *A, const float *b, float *y)
+//式 (1) を計算する (quiz2.cより、 fc_xを覚えるように改造)
+void fc(int m, int n, const float *x, const float *A, const float *b, float *y, float *fc_x)
 {
     int i, j;
+    *fc_x = *x;
     // yはm行で、それぞれの要素について式を適用
     for (i = 0; i < m; i++)
     {
@@ -73,13 +79,13 @@ void softmax(int n, const float *x, float *y)
     }
 }
 
-//入れた要素のうち最大の添え字を返す (quiz5.c)
-int inference3(const float *A, const float *b, const float *x, float *y)
+//入れた要素のうち最大の添え字を返す (quiz5.cより、yをmain関数から取得するように改造)
+int inference3(const float *A, const float *b, const float *x, float *y, float *fc_x, float *relu_x)
 {
     int ans;
     float max_x = 0;
-    fc(10, 784, x, A, b, y);
-    relu(10, y, y);
+    fc(NUMBER_A_ROW, NUMBER_A_COLUMN, x, A, b, y, fc_x);
+    relu(NUMBER_RELU_X, y, y);
     softmax(10, y, y);
 
     for (int i = 0; i < 10; i++)
@@ -93,10 +99,85 @@ int inference3(const float *A, const float *b, const float *x, float *y)
     return ans;
 }
 
+//出力からSoftmax, ReLUへ(quiz8.c)
+
+void softmaxwithloss_bwd(int n, const float *y, unsigned char t, float *dEdx)
+{
+    //ここでxはSoftmaxに入ってくる10個の数、yは出力（10個）
+    // t は正解の時だけ1でそれ以外は0だから、出力のうち正解の時だけ1引く
+    for (int i = 0; i < n; i++)
+    {
+        if (i == (t - 1))
+        {
+            dEdx[i] = y[i] - 1;
+        }
+        else
+        {
+            dEdx[i] = y[i] - 0;
+        }
+    }
+}
+
+// ReLUからFCへ(quiz9.c)
+void relu_bwd(int n, const float *x, const float *dEdy, float *dEdx) // dEdxはyと同じ大きさの配列へのポインタ
+{
+    for (int i = 0; i < n; i++)
+    {
+        if (x[i] > 0)
+        {
+            dEdx[i] = dEdy[i];
+        }
+        else
+        {
+            dEdx[i] = 0;
+        }
+    }
+}
+
+//(quiz10.c)
+void fc_bwd(int m, int n, const float *x, const float *dEdy, const float *A, float *dEdA, float *dEdb, float *dEdx)
+{
+    // Aはm*n行列, Bはm次元ベクトル, xはn次元ベクトル
+    for (int i = 0; i < m; i++)
+    {
+        for (int j = 0; j < n; j++)
+        {
+            dEdA[n * i + j] = dEdy[i] * x[j];
+        }
+    }
+    for (int i = 0; i < m; i++)
+    {
+        dEdb[i] = dEdy[i];
+    }
+
+    for (int i = 0; i < n; i++)
+    {
+        dEdx[i] = 0;
+        for (int j = 0; j < m; j++)
+        {
+            dEdx[i] += dEdy[j] * A[n * j + i];
+        }
+    }
+}
+
 void backward3(const float *A, const float *b, const float *x, unsigned char t,
                float *y, float *dEdA, float *dEdb)
 {
-    inference3(A, b, x, y);
+    float *fc_x = malloc(sizeof(float) * NUMBER_FC_X);
+    float *relu_x = malloc(sizeof(float) * NUMBER_RELU_X);
+    float *dEdx = malloc(sizeof(float) * 10);
+    inference3(A, b, x, y, fc_x, relu_x);
+        print(1, 10, y);
+    softmaxwithloss_bwd(NUMBER_ANS, y, t, dEdx);
+        print(1, 10, dEdx);
+        relu_bwd(NUMBER_ANS, relu_x, dEdx, dEdx);
+            print(1, 10, dEdx);
+        fc_bwd(NUMBER_A_ROW, NUMBER_A_COLUMN, fc_x, dEdx, A, dEdA, dEdb, dEdx);
+        //print(10, 784, dEdA);
+            print(1, 10, dEdb);
+        free(fc_x);
+        free(relu_x);
+        free(dEdx);
 }
 int main()
 {
@@ -113,14 +194,15 @@ int main()
                &test_x, &test_y, &test_count,
                &width, &height);
 
-
     float *y = malloc(sizeof(float) * 10);
-    float *dEdA = malloc(sizeof(float) * 784 * 10);
+    float *dEdA = malloc(sizeof(float) * (NUMBER_A_ROW * NUMBER_A_COLUMN));
     float *dEdb = malloc(sizeof(float) * 10);
     backward3(A_784x10, b_784x10, train_x + 784 * 8, train_y[8], y, dEdA, dEdb);
-   //test
-    print(1, 10, y);
-    // print(10, 784, dEdA);
-    // print(1, 10, dEdb);
+    free(y);
+    printf("ans\n");
+    //print(10, 784, dEdA);
+    print(1, 10, dEdb);
+    free(dEdA);
+    free(dEdb);
     return 0;
 }
