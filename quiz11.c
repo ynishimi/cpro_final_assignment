@@ -2,21 +2,18 @@
 
 #define NUMBER_A_ROW 10
 #define NUMBER_A_COLUMN 784
-#define NUMBER_FC_X 10
+#define NUMBER_FC_X 784
 #define NUMBER_RELU_X 10
 #define NUMBER_ANS 10
 
 //行列を表示する (quiz1.c)
 void print(int m, int n, const float *x)
 {
-    int i, j;
-
-    for (i = 0; i < m; i++)
+    for (int i = 0; i < m; i++)
     {
-        for (j = 0; j < n; j++)
+        for (int j = 0; j < n; j++)
         {
-            printf("%7.4f ", x[j]);
-
+            printf("%6.4f ", x[m * i + j]);
         }
         putchar('\n');
     }
@@ -25,14 +22,19 @@ void print(int m, int n, const float *x)
 //式 (1) を計算する (quiz2.cより、 fc_xを覚えるように改造)
 void fc(int m, int n, const float *x, const float *A, const float *b, float *y, float *fc_x)
 {
-    int i, j;
-    *fc_x = *x;
-    // yはm行で、それぞれの要素について式を適用
-    for (i = 0; i < m; i++)
+
+    for (int i = 0; i < n; i++)
     {
+        // fc_x(要素数はn)を覚える
+        fc_x[i] = x[i];
+    }
+    // yはm行で、それぞれの要素について式を適用
+    for (int i = 0; i < m; i++)
+    {
+
         y[i] = b[i];
         //それぞれの要素についての計算
-        for (j = 0; j < n; j++)
+        for (int j = 0; j < n; j++)
         {
             y[i] += A[n * i + j] * x[j];
         }
@@ -40,12 +42,13 @@ void fc(int m, int n, const float *x, const float *A, const float *b, float *y, 
 }
 
 //式 (2) を計算 (quiz3.c)
-void relu(int n, const float *x, float *y)
+void relu(int n, const float *x, float *y, float *relu_x)
 {
     int i;
     for (i = 0; i < n; i++)
     {
         y[i] = (x[i] > 0 ? x[i] : 0);
+        relu_x[i] = x[i];
     }
 }
 
@@ -85,7 +88,11 @@ int inference3(const float *A, const float *b, const float *x, float *y, float *
     int ans;
     float max_x = 0;
     fc(NUMBER_A_ROW, NUMBER_A_COLUMN, x, A, b, y, fc_x);
-    relu(NUMBER_RELU_X, y, y);
+
+    relu(NUMBER_RELU_X, y, y, relu_x);
+
+    printf("relu_x:\n");
+    print(1, 10, relu_x);
     softmax(10, y, y);
 
     for (int i = 0; i < 10; i++)
@@ -107,7 +114,7 @@ void softmaxwithloss_bwd(int n, const float *y, unsigned char t, float *dEdx)
     // t は正解の時だけ1でそれ以外は0だから、出力のうち正解の時だけ1引く
     for (int i = 0; i < n; i++)
     {
-        if (i == (t - 1))
+        if (i == t)
         {
             dEdx[i] = y[i] - 1;
         }
@@ -167,17 +174,23 @@ void backward3(const float *A, const float *b, const float *x, unsigned char t,
     float *relu_x = malloc(sizeof(float) * NUMBER_RELU_X);
     float *dEdx = malloc(sizeof(float) * 10);
     inference3(A, b, x, y, fc_x, relu_x);
-        print(1, 10, y);
+
+    printf("infernce3:\n");
+    print(1, 10, y);
     softmaxwithloss_bwd(NUMBER_ANS, y, t, dEdx);
-        print(1, 10, dEdx);
-        relu_bwd(NUMBER_ANS, relu_x, dEdx, dEdx);
-            print(1, 10, dEdx);
-        fc_bwd(NUMBER_A_ROW, NUMBER_A_COLUMN, fc_x, dEdx, A, dEdA, dEdb, dEdx);
-        //print(10, 784, dEdA);
-            print(1, 10, dEdb);
-        free(fc_x);
-        free(relu_x);
-        free(dEdx);
+    // printf("softmaxwithloss_bw:\n");
+    // print(1, 10, dEdx);
+
+    relu_bwd(NUMBER_ANS, relu_x, dEdx, dEdx);
+    // printf("relu_bwd:\n");
+    //  print(1, 10, dEdx);
+    fc_bwd(NUMBER_A_ROW, NUMBER_A_COLUMN, fc_x, dEdx, A, dEdA, dEdb, dEdx);
+    // print(10, 784, dEdA);
+    // printf("dEdb\n");
+    // print(1, 10, dEdb);
+    free(fc_x);
+    free(relu_x);
+    free(dEdx);
 }
 int main()
 {
@@ -199,10 +212,15 @@ int main()
     float *dEdb = malloc(sizeof(float) * 10);
     backward3(A_784x10, b_784x10, train_x + 784 * 8, train_y[8], y, dEdA, dEdb);
     free(y);
-    printf("ans\n");
-    //print(10, 784, dEdA);
+
+    print(10, 784, dEdA);
+    printf("dEdb\n");
+
     print(1, 10, dEdb);
     free(dEdA);
     free(dEdb);
+
+    printf("/////\ntest\n/////\n0.0000 -0.0121 0.0000 0.0047 0.0000 0.0014 0.0000 0.0004 0.0032 0.0013\n");
+
     return 0;
 }
