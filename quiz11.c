@@ -91,8 +91,7 @@ int inference3(const float *A, const float *b, const float *x, float *y, float *
 
     relu(NUMBER_RELU_X, y, y, relu_x);
 
-    printf("relu_x:\n");
-    print(1, 10, relu_x);
+
     softmax(10, y, y);
 
     for (int i = 0; i < 10; i++)
@@ -174,20 +173,13 @@ void backward3(const float *A, const float *b, const float *x, unsigned char t,
     float *relu_x = malloc(sizeof(float) * NUMBER_RELU_X);
     float *dEdx = malloc(sizeof(float) * 10);
     inference3(A, b, x, y, fc_x, relu_x);
-
-    printf("infernce3:\n");
-    print(1, 10, y);
+    
+    print(1, 10, y); //ここのprintを削除するとmallocのエラーでる
     softmaxwithloss_bwd(NUMBER_ANS, y, t, dEdx);
-    // printf("softmaxwithloss_bw:\n");
-    // print(1, 10, dEdx);
-
     relu_bwd(NUMBER_ANS, relu_x, dEdx, dEdx);
-    // printf("relu_bwd:\n");
-    //  print(1, 10, dEdx);
+
     fc_bwd(NUMBER_A_ROW, NUMBER_A_COLUMN, fc_x, dEdx, A, dEdA, dEdb, dEdx);
-    // print(10, 784, dEdA);
-    // printf("dEdb\n");
-    // print(1, 10, dEdb);
+
     free(fc_x);
     free(relu_x);
     free(dEdx);
@@ -214,8 +206,6 @@ int main()
     free(y);
 
     print(10, 784, dEdA);
-    printf("dEdb\n");
-
     print(1, 10, dEdb);
     free(dEdA);
     free(dEdb);

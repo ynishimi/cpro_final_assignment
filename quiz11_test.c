@@ -9,13 +9,12 @@
 //行列を表示する (quiz1.c)
 void print(int m, int n, const float *x)
 {
-    int i, j;
-
-    for (i = 0; i < m; i++)
+    for (int i = 0; i < m; i++)
     {
-        for (j = 0; j < n; j++)
+        for (int j = 0; j < n; j++)
         {
-            printf("%7.4f ", x[j]);
+            printf("%6.4f ", x[i * m + j]);
+            
         }
         putchar('\n');
     }
@@ -224,7 +223,7 @@ printf("dEdb\n");
     free(dEdA);
     free(dEdb);
 
-printf("/////\ntest\n/////\n 0.0000 -0.0121  0.0000  0.0047  0.0000  0.0014  0.0000  0.0004  0.0032  0.0013\n");
+printf("/////\ntest\n/////\n 0.0000 -0.0121 0.0000 0.0047 0.0000 0.0014 0.0000 0.0004 0.0032 0.0013\n");
 
     return 0;
 }
