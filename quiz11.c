@@ -13,6 +13,7 @@ void print(int m, int n, const float *x)
     {
         for (int j = 0; j < n; j++)
         {
+            //i行j列の要素をプリントするとき、n * i + j番目を参照
             printf("%6.4f ", x[n * i + j]);
         }
         putchar('\n');
@@ -203,7 +204,6 @@ int main()
     free(dEdA);
     free(dEdb);
 
-    printf("/////\ntest\n/////\n0.0000 -0.0121 0.0000 0.0047 0.0000 0.0014 0.0000 0.0004 0.0032 0.0013\n");
-
+   
     return 0;
 }
