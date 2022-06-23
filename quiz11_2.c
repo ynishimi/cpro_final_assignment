@@ -1,5 +1,7 @@
 #include "nn.h"
 
+#include "nn.h"
+
 //行列を表示する (quiz1.c)
 void print(int m, int n, const float *x)
 {

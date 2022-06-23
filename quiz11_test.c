@@ -13,7 +13,7 @@ void print(int m, int n, const float *x)
     {
         for (int j = 0; j < n; j++)
         {
-            printf("%6.4f ", x[m * i + j]);
+            printf("%6.4f ", x[n * i + j]);
         }
         putchar('\n');
     }
@@ -142,6 +142,8 @@ void fc_bwd(int m, int n, const float *x, const float *dEdy, const float *A, flo
             dEdA[n * i + j] = dEdy[i] * x[j];
         }
     }
+
+    
     for (int i = 0; i < m; i++)
     {
         dEdb[i] = dEdy[i];
@@ -155,6 +157,8 @@ void fc_bwd(int m, int n, const float *x, const float *dEdy, const float *A, flo
             dEdx[i] += dEdy[j] * A[n * j + i];
         }
     }
+
+    
 }
 
 void backward3(const float *A, const float *b, const float *x, unsigned char t,
@@ -164,7 +168,7 @@ void backward3(const float *A, const float *b, const float *x, unsigned char t,
     float *dEdx = malloc(sizeof(float) * 10);
     inference3(A, b, x, y, relu_x);
 
-    // print(1, 10, y); //ここのprintを削除するとmallocのエラーでる
+    print(1, 10, y);
     softmaxwithloss_bwd(NUMBER_ANS, y, t, dEdx);
     relu_bwd(NUMBER_ANS, relu_x, dEdx, dEdx);
 
@@ -194,8 +198,8 @@ int main()
     backward3(A_784x10, b_784x10, train_x + 784 * 8, train_y[8], y, dEdA, dEdb);
     free(y);
 
-    // print(10, 784, dEdA);
-    // print(1, 10, dEdb);
+     print(10, 784, dEdA);
+     print(1, 10, dEdb);
     free(dEdA);
     free(dEdb);
 

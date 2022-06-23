@@ -13,21 +13,16 @@ void print(int m, int n, const float *x)
     {
         for (int j = 0; j < n; j++)
         {
-            printf("%6.4f ", x[m * i + j]);
+            printf("%6.4f ", x[n * i + j]);
         }
         putchar('\n');
     }
 }
 
-//式 (1) を計算する (quiz2.cより、 fc_xを覚えるように改造)
-void fc(int m, int n, const float *x, const float *A, const float *b, float *y, float *fc_x)
+//式 (1) を計算する (quiz2.cより)
+void fc(int m, int n, const float *x, const float *A, const float *b, float *y)
 {
 
-    for (int i = 0; i < n; i++)
-    {
-        // fc_x(要素数はn)を覚える
-        fc_x[i] = x[i];
-    }
     // yはm行で、それぞれの要素について式を適用
     for (int i = 0; i < m; i++)
     {
@@ -47,8 +42,8 @@ void relu(int n, const float *x, float *y, float *relu_x)
     int i;
     for (i = 0; i < n; i++)
     {
-        y[i] = (x[i] > 0 ? x[i] : 0);
         relu_x[i] = x[i];
+        y[i] = (x[i] > 0 ? x[i] : 0);
     }
 }
 
@@ -83,14 +78,12 @@ void softmax(int n, const float *x, float *y)
 }
 
 //入れた要素のうち最大の添え字を返す (quiz5.cより、yをmain関数から取得するように改造)
-int inference3(const float *A, const float *b, const float *x, float *y, float *fc_x, float *relu_x)
+void inference3(const float *A, const float *b, const float *x, float *y, float *relu_x)
 {
-    int ans;
     float max_x = 0;
-    fc(NUMBER_A_ROW, NUMBER_A_COLUMN, x, A, b, y, fc_x);
+    fc(NUMBER_A_ROW, NUMBER_A_COLUMN, x, A, b, y);
 
     relu(NUMBER_RELU_X, y, y, relu_x);
-
 
     softmax(10, y, y);
 
@@ -99,10 +92,8 @@ int inference3(const float *A, const float *b, const float *x, float *y, float *
         if (max_x < y[i])
         {
             max_x = y[i];
-            ans = i;
         }
     }
-    return ans;
 }
 
 //出力からSoftmax, ReLUへ(quiz8.c)
@@ -151,6 +142,8 @@ void fc_bwd(int m, int n, const float *x, const float *dEdy, const float *A, flo
             dEdA[n * i + j] = dEdy[i] * x[j];
         }
     }
+
+    
     for (int i = 0; i < m; i++)
     {
         dEdb[i] = dEdy[i];
@@ -164,24 +157,24 @@ void fc_bwd(int m, int n, const float *x, const float *dEdy, const float *A, flo
             dEdx[i] += dEdy[j] * A[n * j + i];
         }
     }
+
+    
 }
 
 void backward3(const float *A, const float *b, const float *x, unsigned char t,
                float *y, float *dEdA, float *dEdb)
 {
-    float *fc_x = malloc(sizeof(float) * NUMBER_FC_X);
     float *relu_x = malloc(sizeof(float) * NUMBER_RELU_X);
     float *dEdx = malloc(sizeof(float) * 10);
-    inference3(A, b, x, y, fc_x, relu_x);
-    
-    print(1, 10, y); //ここのprintを削除するとmallocのエラーでる
+    inference3(A, b, x, y, relu_x);
+
+    print(1, 10, y);
     softmaxwithloss_bwd(NUMBER_ANS, y, t, dEdx);
     relu_bwd(NUMBER_ANS, relu_x, dEdx, dEdx);
 
-    fc_bwd(NUMBER_A_ROW, NUMBER_A_COLUMN, fc_x, dEdx, A, dEdA, dEdb, dEdx);
-
-    free(fc_x);
+    fc_bwd(NUMBER_A_ROW, NUMBER_A_COLUMN, x, dEdx, A, dEdA, dEdb, dEdx);
     free(relu_x);
+
     free(dEdx);
 }
 int main()
@@ -205,8 +198,8 @@ int main()
     backward3(A_784x10, b_784x10, train_x + 784 * 8, train_y[8], y, dEdA, dEdb);
     free(y);
 
-    print(10, 784, dEdA);
-    print(1, 10, dEdb);
+     print(10, 784, dEdA);
+     print(1, 10, dEdb);
     free(dEdA);
     free(dEdb);
 

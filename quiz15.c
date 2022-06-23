@@ -62,7 +62,7 @@ int main()
         for (int j = 0; j < (N / MINIBATCH); j++)
         {
             //平均勾配の初期化
-
+            
         }
     }
 
