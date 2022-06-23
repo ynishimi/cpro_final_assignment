@@ -9,7 +9,7 @@
 #define EPOCH 10
 #define MINIBATCH 100 //画像を何枚づつ使用するか
 #define LEARN_RATE 0.1
-#define N 60000 //画像の枚数
+#define N 60000 //画像の枚p数
 
 //行列を表示する (quiz1.c)
 void print(int m, int n, const float *x)
@@ -171,7 +171,6 @@ void backward3(const float *A, const float *b, const float *x, unsigned char t,
     float *dEdx = malloc(sizeof(float) * 10);
     inference3(A, b, x, y, relu_x);
 
-    print(1, 10, y);
     softmaxwithloss_bwd(NUMBER_ANS, y, t, dEdx);
     relu_bwd(NUMBER_ANS, relu_x, dEdx, dEdx);
 
@@ -307,7 +306,28 @@ int main()
         //損失関数を表示
 
         //正解率を表示
+        int sum = 0;
+        for (int j = 0; j < test_count; j++)
+        {
+            int ans = 0;
+            int max_x = -1;
+            inference3(A, b, test_x + j * width * height, y, relu_x); //なんとかする
+            for (int k = 0; k < 10; k++)
+            {
+                if (max_x < y[k])
+                {
+                    max_x = y[k];
+                    ans = k;
+                }
+            }
+            if (ans == test_y[i])
+                {
+                    sum++;
+                }
+        }
+        printf("正解率: %f%%\n", sum * 100.0 / test_count);
+        return 0;
     }
-    //printf("正解率: %f\n", cross_entropy_error());
+
     return 0;
 }
