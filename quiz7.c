@@ -112,6 +112,8 @@ int main()
                &test_x, &test_y, &test_count,
                &width, &height);
 
+    printf("%d\n", width);
+    printf("%d\n", height);
     //正解率(quiz7.c)
     int sum = 0;
     for (int i = 0; i < test_count; i++)
