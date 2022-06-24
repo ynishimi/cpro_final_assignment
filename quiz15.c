@@ -29,15 +29,21 @@ void print(int m, int n, const float *x)
 void fc(int m, int n, const float *x, const float *A, const float *b, float *y)
 {
 
+    // y(n個)を受け取ってy(m個)を出力する場合に対応
+    float *input = malloc(sizeof(float) * n);
+    for (int i = 0; i < n; i++)
+    {
+        input[i] = x[i];
+    }
+
     // yはm行で、それぞれの要素について式を適用
     for (int i = 0; i < m; i++)
     {
-
         y[i] = b[i];
         //それぞれの要素についての計算
         for (int j = 0; j < n; j++)
         {
-            y[i] += A[n * i + j] * x[j];
+            y[i] += A[n * i + j] * input[j];
         }
     }
 }
@@ -154,12 +160,19 @@ void fc_bwd(int m, int n, const float *x, const float *dEdy, const float *A, flo
         dEdb[i] = dEdy[i];
     }
 
+    //(6層のときdEdx, dEdyがおなじポインタを扱うことを防ぐため)ReLUの逆から出力されたdEdx(m個)を受け取ってinputに入れて(これをdEdyとする)、dEdx(n個)を計算
+    float *input = malloc(sizeof(float) * m);
+    for (int i = 0; i < m; i++)
+    {
+        input[i] = dEdy[i];
+    }
+
     for (int i = 0; i < n; i++)
     {
         dEdx[i] = 0;
         for (int j = 0; j < m; j++)
         {
-            dEdx[i] += dEdy[j] * A[n * j + i];
+            dEdx[i] += input[j] * A[n * j + i];
         }
     }
 }
@@ -176,6 +189,7 @@ void backward3(const float *A, const float *b, const float *x, unsigned char t,
 
     fc_bwd(NUMBER_A_ROW, NUMBER_A_COLUMN, x, dEdx, A, dEdA, dEdb, dEdx);
     free(relu_x);
+
 
     free(dEdx);
 }
@@ -260,6 +274,7 @@ int main()
     rand_init(NUMBER_A_ROW * NUMBER_A_COLUMN, A);
     rand_init(10, b);
 
+
     //エポック回数だけ以下の処理を繰り返す
     for (int i = 0; i < EPOCH; i++)
     {
@@ -285,6 +300,9 @@ int main()
                 // シャッフルした画像の番号: index[j * MINIBATCH + k]
                 backward3(A, b, train_x + 784 * index[j * MINIBATCH + k], train_y[index[j * MINIBATCH + k]], y, dEdA, dEdb);
 
+                // test: dEdbを表示してみる
+                print(1, 10, dEdb);
+
                 //平均勾配に計算結果を加える
                 add((NUMBER_A_ROW * NUMBER_A_COLUMN), dEdA, dEdA_ave);
                 add(10, dEdb, dEdb_ave);
@@ -304,29 +322,33 @@ int main()
         //テストデータで推論
 
         //損失関数を表示
+        /*
+                //正解率を表示
+                int sum = 0;
+                for (int j = 0; j < test_count; j++)
+                {
+                    int ans = 0;
+                    int max_x = -1;
 
-        //正解率を表示
-        int sum = 0;
-        for (int j = 0; j < test_count; j++)
-        {
-            int ans = 0;
-            int max_x = -1;
-            inference3(A, b, test_x + j * width * height, y, relu_x); //なんとかする
-            for (int k = 0; k < 10; k++)
-            {
-                if (max_x < y[k])
-                {
-                    max_x = y[k];
-                    ans = k;
+                    //正解率を表示するときrelu_x_nullを一応入れる(どうすれば...?)
+                    float *relu_x_null = malloc(sizeof(float) * NUMBER_RELU_X);
+                    inference3(A, b, test_x + j * width * height, y, relu_x_null);
+                    free(relu_x_null);
+                    for (int k = 0; k < 10; k++)
+                    {
+                        if (max_x < y[k])
+                        {
+                            max_x = y[k];
+                            ans = k;
+                        }
+                    }
+                    if (ans == test_y[i])
+                        {
+                            sum++;
+                        }
                 }
-            }
-            if (ans == test_y[i])
-                {
-                    sum++;
-                }
-        }
-        printf("正解率: %f%%\n", sum * 100.0 / test_count);
-        return 0;
+                printf("正解率: %f%%\n", sum * 100.0 / test_count);
+                */
     }
 
     return 0;
