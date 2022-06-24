@@ -7,13 +7,9 @@
 #define NUMBER_A3_ROW 10
 #define NUMBER_A3_COLUMN 100
 
-#define NUMBER_b1 50
-#define NUMBER_b2 100
-#define NUMBER_b1 10
-
 #define NUMBER_ANS 10
 
-/*
+
 //行列を表示する (quiz1.c)
 void print(int m, int n, const float *x)
 {
@@ -27,7 +23,7 @@ void print(int m, int n, const float *x)
         putchar('\n');
     }
 }
-*/
+
 
 //式 (1) を計算する (quiz2.cより)
 void fc(int m, int n, const float *x, const float *A, const float *b, float *y)
@@ -104,11 +100,13 @@ int inference6(const float *A1, const float *b1, const float *A2, const float *b
     fc(NUMBER_A3_ROW, NUMBER_A3_COLUMN, y, A3, b3, y);
     softmax(10, y, y);
 
+    //答えを返り値に
     for (int i = 0; i < 10; i++)
     {
         if (max_x < y[i])
         {
             max_x = y[i];
+            ans = i;
         }
     }
 
@@ -216,23 +214,41 @@ int main()
                &test_x, &test_y, &test_count,
                &width, &height);
 
-    //正解率(quiz7.c)
-    int sum = 0;
-    for (int i = 0; i < test_count; i++)
-    {
-        if (inference6(A1_784_50_100_10, b1_784_50_100_10, A2_784_50_100_10, b2_784_50_100_10, A3_784_50_100_10, b3_784_50_100_10, test_x + i * width * height) == test_y[i])
-        {
-            sum++;
-        }
-    }
-    printf("%f%%\n", sum * 100.0 / test_count);
-    
+
+    //yは最大100
+        float *y = malloc(sizeof(float) * 100);
+
+    //test
+            for (int i = 0; i < 3; i++){
+        
+        int ans = inference6(A1_784_50_100_10, b1_784_50_100_10, A2_784_50_100_10, b2_784_50_100_10, A3_784_50_100_10, b3_784_50_100_10, test_x + i * 784, y);
+        print(1, 10, y);
+        printf("%d\n", ans);
+        putchar('\n');
+    save_mnist_bmp(test_x + 784 * i, "test_%05d.bmp", i);
+            }
 /*
-    float *y = malloc(sizeof(float) * 10);
+            //正解率(quiz7.c)
+    int sum = 0;
+        for (int i = 0; i < test_count; i++)
+        {
+            if (inference6(A1_784_50_100_10, b1_784_50_100_10, A2_784_50_100_10, b2_784_50_100_10, A3_784_50_100_10, b3_784_50_100_10, test_x + i * width * height, y) == test_y[i])
+            {
+                sum++;
+
+            }
+        }
+        printf("%f%%\n", sum * 100.0 / test_count);
+  */      
+
+
+
+        free(y);
+/*
     float *dEdA = malloc(sizeof(float) * (NUMBER_A_ROW * NUMBER_A_COLUMN));
     float *dEdb = malloc(sizeof(float) * 10);
     //backward3(A_784x10, b_784x10, train_x + 784 * 8, train_y[8], y, dEdA, dEdb);
-    free(y);
+
 
      print(10, 784, dEdA);
      print(1, 10, dEdb);
