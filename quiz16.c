@@ -9,7 +9,6 @@
 
 #define NUMBER_ANS 10
 
-
 //行列を表示する (quiz1.c)
 void print(int m, int n, const float *x)
 {
@@ -17,17 +16,23 @@ void print(int m, int n, const float *x)
     {
         for (int j = 0; j < n; j++)
         {
-            //i行j列の要素をプリントするとき、n * i + j番目を参照
+            // i行j列の要素をプリントするとき、n * i + j番目を参照
             printf("%6.4f ", x[n * i + j]);
         }
         putchar('\n');
     }
 }
 
-
 //式 (1) を計算する (quiz2.cより)
 void fc(int m, int n, const float *x, const float *A, const float *b, float *y)
 {
+
+    // y(n個)を受け取ってy(m個)を出力する場合に対応
+    float *input = malloc(sizeof(float) * n);
+    for (int i = 0; i < n; i++)
+    {
+        input[i] = x[i];
+    }
 
     // yはm行で、それぞれの要素について式を適用
     for (int i = 0; i < m; i++)
@@ -37,7 +42,7 @@ void fc(int m, int n, const float *x, const float *A, const float *b, float *y)
         //それぞれの要素についての計算
         for (int j = 0; j < n; j++)
         {
-            y[i] += A[n * i + j] * x[j];
+            y[i] += A[n * i + j] * input[j];
         }
     }
 }
@@ -87,16 +92,16 @@ int inference6(const float *A1, const float *b1, const float *A2, const float *b
 {
     int ans;
     float max_x = 0;
-   
-    //FC1
+
+    // FC1
     fc(NUMBER_A1_ROW, NUMBER_A1_COLUMN, x, A1, b1, y);
-    //ReLU1
+    // ReLU1
     relu(NUMBER_A1_ROW, y, y);
-    //FC2
+    // FC2
     fc(NUMBER_A2_ROW, NUMBER_A2_COLUMN, y, A2, b2, y);
-    //ReLU2
+    // ReLU2
     relu(NUMBER_A2_ROW, y, y);
-    //FC3
+    // FC3
     fc(NUMBER_A3_ROW, NUMBER_A3_COLUMN, y, A3, b3, y);
     softmax(10, y, y);
 
@@ -112,7 +117,6 @@ int inference6(const float *A1, const float *b1, const float *A2, const float *b
 
     return ans;
 }
-
 
 /*
 //出力からSoftmax, ReLUへ(quiz8.c)
@@ -162,7 +166,7 @@ void fc_bwd(int m, int n, const float *x, const float *dEdy, const float *A, flo
         }
     }
 
-    
+
     for (int i = 0; i < m; i++)
     {
         dEdb[i] = dEdy[i];
@@ -177,7 +181,7 @@ void fc_bwd(int m, int n, const float *x, const float *dEdy, const float *A, flo
         }
     }
 
-    
+
 }
 
 void backward3(const float *A, const float *b, const float *x, unsigned char t,
@@ -214,47 +218,32 @@ int main()
                &test_x, &test_y, &test_count,
                &width, &height);
 
+    // yは最大100
+    float *y = malloc(sizeof(float) * 100);
 
-    //yは最大100
-        float *y = malloc(sizeof(float) * 100);
-
-    //test
-            for (int i = 0; i < 3; i++){
-        
-        int ans = inference6(A1_784_50_100_10, b1_784_50_100_10, A2_784_50_100_10, b2_784_50_100_10, A3_784_50_100_10, b3_784_50_100_10, test_x + i * 784, y);
-        print(1, 10, y);
-        printf("%d\n", ans);
-        putchar('\n');
-    save_mnist_bmp(test_x + 784 * i, "test_%05d.bmp", i);
-            }
-/*
-            //正解率(quiz7.c)
+    //正解率(quiz7.c)
     int sum = 0;
-        for (int i = 0; i < test_count; i++)
+    for (int i = 0; i < test_count; i++)
+    {
+        if (inference6(A1_784_50_100_10, b1_784_50_100_10, A2_784_50_100_10, b2_784_50_100_10, A3_784_50_100_10, b3_784_50_100_10, test_x + i * width * height, y) == test_y[i])
         {
-            if (inference6(A1_784_50_100_10, b1_784_50_100_10, A2_784_50_100_10, b2_784_50_100_10, A3_784_50_100_10, b3_784_50_100_10, test_x + i * width * height, y) == test_y[i])
-            {
-                sum++;
-
-            }
+            sum++;
         }
-        printf("%f%%\n", sum * 100.0 / test_count);
-  */      
+    }
+    printf("%f%%\n", sum * 100.0 / test_count);
+
+    free(y);
+    /*
+        float *dEdA = malloc(sizeof(float) * (NUMBER_A_ROW * NUMBER_A_COLUMN));
+        float *dEdb = malloc(sizeof(float) * 10);
+        //backward3(A_784x10, b_784x10, train_x + 784 * 8, train_y[8], y, dEdA, dEdb);
 
 
+         print(10, 784, dEdA);
+         print(1, 10, dEdb);
+        free(dEdA);
+        free(dEdb);
+    */
 
-        free(y);
-/*
-    float *dEdA = malloc(sizeof(float) * (NUMBER_A_ROW * NUMBER_A_COLUMN));
-    float *dEdb = malloc(sizeof(float) * 10);
-    //backward3(A_784x10, b_784x10, train_x + 784 * 8, train_y[8], y, dEdA, dEdb);
-
-
-     print(10, 784, dEdA);
-     print(1, 10, dEdb);
-    free(dEdA);
-    free(dEdb);
-
-   */
     return 0;
 }

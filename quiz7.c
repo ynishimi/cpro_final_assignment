@@ -21,6 +21,8 @@ void print(int m, int n, const float *x)
 */
 
 //式 (1) を計算する (quiz2.c)
+
+/*
 void fc(int m, int n, const float *x, const float *A, const float *b, float *y)
 {
     int i, j;
@@ -32,6 +34,29 @@ void fc(int m, int n, const float *x, const float *A, const float *b, float *y)
         for (j = 0; j < n; j++)
         {
             y[i] += A[n * i + j] * x[j];
+        }
+    }
+}
+*/
+void fc(int m, int n, const float *x, const float *A, const float *b, float *y)
+{
+
+        //yを受け取ってyを出力する場合に対応
+    float *input = malloc(sizeof(float) * n);
+    for(int i= 0; i < n; i++)
+    {
+        input[i] = x[i];
+    }
+
+    // yはm行で、それぞれの要素について式を適用
+    for (int i = 0; i < m; i++)
+    {
+
+        y[i] = b[i];
+        //それぞれの要素についての計算
+        for (int j = 0; j < n; j++)
+        {
+            y[i] += A[n * i + j] * input[j];
         }
     }
 }
@@ -112,8 +137,7 @@ int main()
                &test_x, &test_y, &test_count,
                &width, &height);
 
-    printf("%d\n", width);
-    printf("%d\n", height);
+
     //正解率(quiz7.c)
     int sum = 0;
     for (int i = 0; i < test_count; i++)
