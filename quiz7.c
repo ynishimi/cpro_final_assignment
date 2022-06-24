@@ -41,7 +41,7 @@ void fc(int m, int n, const float *x, const float *A, const float *b, float *y)
 void fc(int m, int n, const float *x, const float *A, const float *b, float *y)
 {
 
-        //yを受け取ってyを出力する場合に対応
+        //(6層のときx,yがおなじポインタを扱うことを防ぐため)ReLUが出力したy(n個)を受け取って(これをxとする)、y(m個)を出力する場合に対応
     float *input = malloc(sizeof(float) * n);
     for(int i= 0; i < n; i++)
     {
