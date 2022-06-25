@@ -9,7 +9,7 @@
 #define EPOCH 10
 #define MINIBATCH 100 //画像を何枚づつ使用するか
 #define LEARN_RATE 0.1
-#define N 60000 //画像の枚p数
+#define N 60000 //画像の枚数
 
 //行列を表示する (quiz1.c)
 void print(int m, int n, const float *x)
@@ -181,7 +181,7 @@ void backward3(const float *A, const float *b, const float *x, unsigned char t,
                float *y, float *dEdA, float *dEdb)
 {
     float *relu_x = malloc(sizeof(float) * NUMBER_RELU_X);
-    float *dEdx = malloc(sizeof(float) * 10);
+    float *dEdx = malloc(sizeof(float) * NUMBER_A_COLUMN);
     inference3(A, b, x, y, relu_x);
 
     softmaxwithloss_bwd(NUMBER_ANS, y, t, dEdx);
@@ -189,7 +189,6 @@ void backward3(const float *A, const float *b, const float *x, unsigned char t,
 
     fc_bwd(NUMBER_A_ROW, NUMBER_A_COLUMN, x, dEdx, A, dEdA, dEdb, dEdx);
     free(relu_x);
-
 
     free(dEdx);
 }
@@ -290,27 +289,29 @@ int main()
         //ミニバッチ学習
         for (int j = 0; j < (N / MINIBATCH); j++)
         {
+
             //平均勾配の初期化
             init((NUMBER_A_ROW * NUMBER_A_COLUMN), 0, dEdA_ave);
             init(10, 0, dEdb_ave);
 
+
             // indexから次のMINIBATCH個とりだして、MINIBATCH回勾配を計算
             for (int k = 0; k < MINIBATCH; k++)
             {
+
                 // シャッフルした画像の番号: index[j * MINIBATCH + k]
                 backward3(A, b, train_x + 784 * index[j * MINIBATCH + k], train_y[index[j * MINIBATCH + k]], y, dEdA, dEdb);
 
-                // test: dEdbを表示してみる
-                print(1, 10, dEdb);
 
                 //平均勾配に計算結果を加える
                 add((NUMBER_A_ROW * NUMBER_A_COLUMN), dEdA, dEdA_ave);
                 add(10, dEdb, dEdb_ave);
+
             }
 
             // MINIBATCHで割って平均勾配を完成させる
-            scale((NUMBER_A_ROW * NUMBER_A_COLUMN), (-1 / MINIBATCH), dEdA_ave);
-            scale(10, (-1 / MINIBATCH), dEdb_ave);
+            scale((NUMBER_A_ROW * NUMBER_A_COLUMN), (1.0 / MINIBATCH), dEdA_ave);
+            scale(10, (1.0 / MINIBATCH), dEdb_ave);
 
             // A, bの更新(平均勾配にLEARN_RATEかけてもとの行列から引き算)
             scale((NUMBER_A_ROW * NUMBER_A_COLUMN), LEARN_RATE, dEdA_ave);
@@ -322,16 +323,17 @@ int main()
         //テストデータで推論
 
         //損失関数を表示
-        /*
+        
                 //正解率を表示
                 int sum = 0;
+
                 for (int j = 0; j < test_count; j++)
                 {
                     int ans = 0;
                     int max_x = -1;
 
                     //正解率を表示するときrelu_x_nullを一応入れる(どうすれば...?)
-                    float *relu_x_null = malloc(sizeof(float) * NUMBER_RELU_X);
+                    float *relu_x_null = malloc(sizeof(float) * NUMBER_A_COLUMN);
                     inference3(A, b, test_x + j * width * height, y, relu_x_null);
                     free(relu_x_null);
                     for (int k = 0; k < 10; k++)
@@ -342,14 +344,15 @@ int main()
                             ans = k;
                         }
                     }
-                    if (ans == test_y[i])
-                        {
-                            sum++;
+                    print(1, 10, y);
+                    printf("%d, %d\n", ans, test_y[j]);
+                    if (ans == test_y[j])
+                    {
+                        sum++;
                         }
                 }
                 printf("正解率: %f%%\n", sum * 100.0 / test_count);
-                */
+                
     }
-
     return 0;
 }
