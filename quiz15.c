@@ -92,6 +92,7 @@ void softmax(int n, const float *x, float *y)
 //入れた要素のうち最大の添え字を返す (quiz5.cより、yをmain関数から取得するように改造)
 void inference3(const float *A, const float *b, const float *x, float *y, float *relu_x)
 {
+
     float max_x = 0;
     fc(NUMBER_A_ROW, NUMBER_A_COLUMN, x, A, b, y);
 
@@ -106,6 +107,10 @@ void inference3(const float *A, const float *b, const float *x, float *y, float 
             max_x = y[i];
         }
     }
+
+                        //test
+        printf("y=");
+        print(1, 10, y);
 }
 
 //出力からSoftmax, ReLUへ(quiz8.c)
@@ -130,8 +135,12 @@ void softmaxwithloss_bwd(int n, const float *y, unsigned char t, float *dEdx)
 // ReLUからFCへ(quiz9.c)
 void relu_bwd(int n, const float *x, const float *dEdy, float *dEdx) // dEdxはyと同じ大きさの配列へのポインタ
 {
+                    //test
+        printf("dEdy=");
+        print(1, 10, dEdy);
     for (int i = 0; i < n; i++)
     {
+
         if (x[i] > 0)
         {
             dEdx[i] = dEdy[i];
@@ -146,13 +155,15 @@ void relu_bwd(int n, const float *x, const float *dEdy, float *dEdx) // dEdxはy
 //(quiz10.c)
 void fc_bwd(int m, int n, const float *x, const float *dEdy, const float *A, float *dEdA, float *dEdb, float *dEdx)
 {
-    // Aはm*n行列, Bはm次元ベクトル, xはn次元ベクトル
-    for (int i = 0; i < m; i++)
-    {
-        for (int j = 0; j < n; j++)
+
+
+        // Aはm*n行列, Bはm次元ベクトル, xはn次元ベクトル
+        for (int i = 0; i < m; i++)
         {
-            dEdA[n * i + j] = dEdy[i] * x[j];
-        }
+            for (int j = 0; j < n; j++)
+            {
+                dEdA[n * i + j] = dEdy[i] * x[j];
+            }
     }
 
     for (int i = 0; i < m; i++)
@@ -191,6 +202,8 @@ void backward3(const float *A, const float *b, const float *x, unsigned char t,
     free(relu_x);
 
     free(dEdx);
+    
+
 }
 
 void add(int n, const float *x, float *o)
@@ -301,7 +314,10 @@ int main()
 
                 // シャッフルした画像の番号: index[j * MINIBATCH + k]
                 backward3(A, b, train_x + 784 * index[j * MINIBATCH + k], train_y[index[j * MINIBATCH + k]], y, dEdA, dEdb);
-
+               
+                //test
+                printf("index[%d]\n", index[j * MINIBATCH + k]);
+                print(1, 10, dEdb);
 
                 //平均勾配に計算結果を加える
                 add((NUMBER_A_ROW * NUMBER_A_COLUMN), dEdA, dEdA_ave);
@@ -319,6 +335,9 @@ int main()
 
             add((NUMBER_A_ROW * NUMBER_A_COLUMN), dEdA_ave, A);
             add(10, dEdb_ave, b);
+            //test
+            printf("batch(%d)\n", j);
+            print(1, 10, dEdb_ave);
         }
         //テストデータで推論
 
@@ -344,8 +363,8 @@ int main()
                             ans = k;
                         }
                     }
-                    print(1, 10, y);
-                    printf("%d, %d\n", ans, test_y[j]);
+                    //print(1, 10, y);
+                    //printf("%d, %d\n", ans, test_y[j]);
                     if (ans == test_y[j])
                     {
                         sum++;
