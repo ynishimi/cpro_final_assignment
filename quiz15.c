@@ -285,8 +285,9 @@ void shuffle(int n, int *x)
 
 float cross_entropy_error(const float *y, int t)
 {
-    return -log(y[t] + exp(1) - 7);
+    return -log(y[t] + 1e-7);
 }
+
 
 int main()
 {
@@ -390,7 +391,7 @@ int main()
 
         //正解率を表示
         int sum = 0;
-
+        float E_sum = 0;
         for (int j = 0; j < test_count; j++)
         {
             int ans = 0;
@@ -415,8 +416,12 @@ int main()
             {
                 sum++;
             }
+
+            //損失関数
+            E_sum += cross_entropy_error(y, test_y[j]);
         }
-        printf("epoch%d: %f%%\n", i+1, sum * 100.0 / test_count);
+        printf("損失関数%d: %f%%\n", i + 1, E_sum * 100.0 / test_count);
+        printf("正解率%d: %f%%\n", i + 1, sum * 100.0 / test_count);
     }
     return 0;
 }
