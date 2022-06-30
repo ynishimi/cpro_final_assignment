@@ -1,6 +1,5 @@
 #include <time.h>
 #include "nn.h"
-// time.hがインクルードできない？？
 
 #define NUMBER_A_ROW 10
 #define NUMBER_A_COLUMN 784
@@ -66,12 +65,11 @@ void fc(int m, int n, const float *x, const float *A, const float *b, float *y)
 }
 
 //式 (2) を計算 (quiz3.c)
-void relu(int n, const float *x, float *y, float *relu_x)
+void relu(int n, const float *x, float *y)
 {
     int i;
     for (i = 0; i < n; i++)
     {
-        relu_x[i] = x[i];
         y[i] = (x[i] > 0 ? x[i] : 0);
     }
 }
@@ -79,14 +77,13 @@ void relu(int n, const float *x, float *y, float *relu_x)
 //式(4) を計算(quiz4.c)
 void softmax(int n, const float *x, float *y)
 {
-    int i, j, k;
     float max_x, sum;
     max_x = 0;
     sum = 0;
     float exp_x[n];
 
     // max_x求める
-    for (i = 0; i < n; i++)
+    for (int i = 0; i < n; i++)
     {
         if (max_x < x[i])
         {
@@ -95,35 +92,26 @@ void softmax(int n, const float *x, float *y)
     }
 
     //分子を計算
-    for (j = 0; j < n; j++)
+    for (int i = 0; i < n; i++)
     {
-        exp_x[j] = exp(x[j] - max_x);
-        sum += exp_x[j];
+        exp_x[i] = exp(x[i] - max_x);
+        sum += exp_x[i];
     }
-    for (k = 0; k < n; k++)
+    for (int i = 0; i < n;i++)
     {
-        y[k] = exp_x[k] / sum;
+        y[i] = exp_x[i] / sum;
     }
 }
 
 //入れた要素のうち最大の添え字を返す (quiz5.cより、yをmain関数から取得するように改造)
-void inference3(const float *A, const float *b, const float *x, float *y, float *relu_x)
+void inference3(const float *A, const float *b, const float *x, float *out_fc, float *out_relu, float *y)
 {
 
-    float max_x = 0;
-    fc(NUMBER_A_ROW, NUMBER_A_COLUMN, x, A, b, y);
+    fc(NUMBER_A_ROW, NUMBER_A_COLUMN, x, A, b, out_fc);
 
-    relu(NUMBER_RELU_X, y, y, relu_x);
+    relu(NUMBER_RELU_X, out_fc, out_relu);
 
-    softmax(10, y, y);
-
-    for (int i = 0; i < 10; i++)
-    {
-        if (max_x < y[i])
-        {
-            max_x = y[i];
-        }
-    }
+    softmax(10, out_relu, y);
 
     // test
     // printf("y=");
@@ -136,9 +124,10 @@ void softmaxwithloss_bwd(int n, const float *y, unsigned char t, float *dEdx)
 {
     //ここでxはSoftmaxに入ってくる10個の数、yは出力（10個）
     // t は正解の時だけ1でそれ以外は0だから、出力のうち正解の時だけ1引く
+    int t_int = (int)t;
     for (int i = 0; i < n; i++)
     {
-        if (i == t)
+        if (i == t_int)
         {
             dEdx[i] = y[i] - 1.0;
         }
@@ -186,13 +175,14 @@ void fc_bwd(int m, int n, const float *x, const float *dEdy, const float *A, flo
         dEdb[i] = dEdy[i];
     }
 
-    //(6層のときdEdx, dEdyがおなじポインタを扱うことを防ぐため)ReLUの逆から出力されたdEdx(m個)を受け取ってinputに入れて(これをdEdyとする)、dEdx(n個)を計算
-    float *input = malloc(sizeof(float) * m);
-    for (int i = 0; i < m; i++)
-    {
-        input[i] = dEdy[i];
-    }
-
+    
+        //(6層のときdEdx, dEdyがおなじポインタを扱うことを防ぐため)ReLUの逆から出力されたdEdx(m個)を受け取ってinputに入れて(これをdEdyとする)、dEdx(n個)を計算
+        float *input = malloc(sizeof(float) * m);
+        for (int i = 0; i < m; i++)
+        {
+            input[i] = dEdy[i];
+        }
+    
     for (int i = 0; i < n; i++)
     {
         dEdx[i] = 0;
@@ -204,11 +194,11 @@ void fc_bwd(int m, int n, const float *x, const float *dEdy, const float *A, flo
 }
 
 void backward3(const float *A, const float *b, const float *x, unsigned char t,
-               float *y, float *dEdA, float *dEdb)
+               float *out_fc, float *out_relu, float *y, float *dEdA, float *dEdb)
 {
-    float *relu_x = malloc(sizeof(float) * NUMBER_RELU_X);
     float *dEdx = malloc(sizeof(float) * NUMBER_A_COLUMN);
-    inference3(A, b, x, y, relu_x);
+
+    inference3(A, b, x, out_fc, out_relu, y);
 
     // test
     // printf("t = %d\ninference3: \n", t);
@@ -220,7 +210,7 @@ void backward3(const float *A, const float *b, const float *x, unsigned char t,
     // printf("softmaxwithloss_bwd:\n");
     // print_oct(10, 1, dEdx, "dEdx");
 
-    relu_bwd(NUMBER_ANS, relu_x, dEdx, dEdx);
+    relu_bwd(NUMBER_ANS, out_fc, dEdx, dEdx);
 
     // test
     // printf("relu_bwd:\n");
@@ -232,7 +222,6 @@ void backward3(const float *A, const float *b, const float *x, unsigned char t,
     // printf("fc_bwd:\n");
     // print_oct(10, 1, dEdb, "dEdb");
 
-    free(relu_x);
     free(dEdx);
 }
 
@@ -288,7 +277,6 @@ float cross_entropy_error(const float *y, int t)
     return -log(y[t] + 1e-7);
 }
 
-
 int main()
 {
     srand(time(NULL));
@@ -305,11 +293,14 @@ int main()
     load_mnist(&train_x, &train_y, &train_count,
                &test_x, &test_y, &test_count,
                &width, &height);
+    float *out_fc = malloc(sizeof(float) * NUMBER_RELU_X);
+    float *out_relu = malloc(sizeof(float) * 10);
     float *y = malloc(sizeof(float) * 10);
     float *dEdA = malloc(sizeof(float) * (NUMBER_A_ROW * NUMBER_A_COLUMN));
     float *dEdb = malloc(sizeof(float) * 10);
     float *A = malloc(sizeof(float) * (NUMBER_A_ROW * NUMBER_A_COLUMN));
     float *b = malloc(sizeof(float) * 10);
+    int *index = malloc(sizeof(int) * N);
 
     //平均勾配を定義
     float *dEdA_ave = malloc(sizeof(float) * (NUMBER_A_ROW * NUMBER_A_COLUMN));
@@ -324,10 +315,9 @@ int main()
     {
         // indexのならびかえ
 
-        int *index = malloc(sizeof(int) * train_count);
-        for (int i = 0; i < N; i++)
+        for (int j = 0; j < N; j++)
         {
-            index[i] = i;
+            index[j] = j;
         }
         shuffle(N, index);
 
@@ -344,7 +334,7 @@ int main()
             {
 
                 // シャッフルした画像の番号: index[j * MINIBATCH + k]
-                backward3(A, b, train_x + 784 * index[j * MINIBATCH + k], train_y[index[j * MINIBATCH + k]], y, dEdA, dEdb);
+                backward3(A, b, train_x + 784 * index[j * MINIBATCH + k], train_y[index[j * MINIBATCH + k]], out_fc, out_relu,  y, dEdA, dEdb);
 
                 // test
                 // printf("index[%d]\n", index[j * MINIBATCH + k]);
@@ -385,9 +375,9 @@ int main()
             // printf("batch(%d)\n", j);
             // print(1, 10, dEdb_ave);
         }
-        //テストデータで推論
 
-        //損失関数を表示
+        
+        //テストデータで推論
 
         //正解率を表示
         int sum = 0;
@@ -397,10 +387,9 @@ int main()
             int ans = 0;
             float max_x = 0;
 
-            //正解率を表示するときrelu_x_nullを一応入れる(どうすれば...?)
-            float *relu_x_null = malloc(sizeof(float) * NUMBER_A_COLUMN);
-            inference3(A, b, test_x + j * width * height, y, relu_x_null);
-            free(relu_x_null);
+
+            inference3(A, b, test_x + j * width * height,out_fc, out_relu, y);
+
             for (int k = 0; k < 10; k++)
             {
                 if (max_x < y[k])
@@ -410,18 +399,28 @@ int main()
                     ans = k;
                 }
             }
-            print(1, 10, y);
-            printf("%d, %d\n///\n", ans, test_y[j]);
+            // printf("inf(%d):\n", j);
+            // print(1, 10, y);
+            // printf("%d, %d\n///\n", ans, test_y[j]);
             if (ans == test_y[j])
             {
                 sum++;
             }
 
             //損失関数
+            // printf("%f\n", cross_entropy_error(y, test_y[j]));
+
             E_sum += cross_entropy_error(y, test_y[j]);
         }
-        printf("損失関数%d: %f%%\n", i + 1, E_sum * 100.0 / test_count);
+        printf("損失関数%d: %f\n", i + 1, E_sum * 100.0 / test_count);
         printf("正解率%d: %f%%\n", i + 1, sum * 100.0 / test_count);
     }
+
+
+
+
+
+
+
     return 0;
 }
