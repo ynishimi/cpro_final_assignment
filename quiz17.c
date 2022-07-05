@@ -126,7 +126,7 @@ void softmaxwithloss_bwd(int n, const float *y, unsigned char t, float *dEdx)
         }
         else
         {
-            dEdx[i] = y[i] - 0;
+            dEdx[i] = y[i];
         }
     }
 }
@@ -172,10 +172,16 @@ void fc_bwd(int m, int n, const float *x, const float *dEdy, const float *A, flo
     }
 }
 
-void backward6(const float *A1, const float *b1, const float *A2, const float *b2, const float *A3, const float *b3, const float *x, unsigned char t,
-               float *out_fc1, float *out_relu1, float *out_fc2, float *out_relu2, float *out_fc3, float *y, float *dEdA1, float *dEdb1, float *dEdA2, float *dEdb2, float *dEdA3, float *dEdb3)
+void backward6(const float *A1, const float *b1, const float *A2, const float *b2, const float *A3, const float *b3, const float *x ,float *out_fc1, float *out_relu1, float *out_fc2, float *out_relu2, float *out_fc3, unsigned char t,
+               float *y, float *dEdA1, float *dEdb1, float *dEdA2, float *dEdb2, float *dEdA3, float *dEdb3)
 {
-    float *dEdx = malloc(sizeof(float) * NUMBER_A1_COLUMN);
+
+    // float *dEdx = malloc(sizeof(float) * NUMBER_A1_COLUMN);
+
+    float *dEdx3 = malloc(sizeof(float) * 10);
+    float *dEdx2 = malloc(sizeof(float) * 100);
+    float *dEdx1 = malloc(sizeof(float) * 50);
+    float *dEdx0 = malloc(sizeof(float) * 784);
 
     inference6(A1, b1, A2, b2, A3, b3, x, out_fc1, out_relu1, out_fc2, out_relu2, out_fc3, y);
 
@@ -184,36 +190,39 @@ void backward6(const float *A1, const float *b1, const float *A2, const float *b
     // print_oct(10, 1, y, "y");
 
     // softmax
-    softmaxwithloss_bwd(NUMBER_A3_ROW, y, t, dEdx);
+    softmaxwithloss_bwd(NUMBER_A3_ROW, y, t, dEdx3);
 
     // fc3
-    fc_bwd(NUMBER_A3_ROW, NUMBER_A3_COLUMN, x, dEdx, A3, dEdA3, dEdb3, dEdx);
+    fc_bwd(NUMBER_A3_ROW, NUMBER_A3_COLUMN, out_relu2, dEdx3, A3, dEdA3, dEdb3, dEdx2);
 
     // test
     // printf("softmaxwithloss_bwd:\n");
     // print_oct(10, 1, dEdx, "dEdx");
 
     // relu2
-    relu_bwd(NUMBER_A2_ROW, out_fc2, dEdx, dEdx);
+    relu_bwd(NUMBER_A2_ROW, out_fc2, dEdx2, dEdx2);
 
     // test
     // printf("relu_bwd:\n");
     // print_oct(10, 1, dEdx, "dEdx");
 
     // fc2
-    fc_bwd(NUMBER_A2_ROW, NUMBER_A2_COLUMN, x, dEdx, A2, dEdA2, dEdb2, dEdx);
+    fc_bwd(NUMBER_A2_ROW, NUMBER_A2_COLUMN, out_relu1, dEdx2, A2, dEdA2, dEdb2, dEdx1);
 
     // test
     // printf("fc_bwd:\n");
     // print_oct(10, 1, dEdb, "dEdb");
 
     // relu1
-    relu_bwd(NUMBER_A1_ROW, out_fc1, dEdx, dEdx);
+    relu_bwd(NUMBER_A1_ROW, out_fc1, dEdx1, dEdx1);
 
     // fc1
-    fc_bwd(NUMBER_A1_ROW, NUMBER_A1_COLUMN, x, dEdx, A1, dEdA1, dEdb1, dEdx);
+    fc_bwd(NUMBER_A1_ROW, NUMBER_A1_COLUMN, x, dEdx1, A1, dEdA1, dEdb1, dEdx0);
 
-    free(dEdx);
+    free(dEdx0);
+    free(dEdx1);
+    free(dEdx2);
+    free(dEdx3);
 }
 
 void add(int n, const float *x, float *o)
@@ -285,12 +294,6 @@ int main()
                &test_x, &test_y, &test_count,
                &width, &height);
 
-    float *out_fc1 = malloc(sizeof(float) * NUMBER_A1_ROW);
-    float *out_relu1 = malloc(sizeof(float) * NUMBER_A1_ROW);
-    float *out_fc2 = malloc(sizeof(float) * NUMBER_A2_ROW);
-    float *out_relu2 = malloc(sizeof(float) * NUMBER_A2_ROW);
-    float *out_fc3 = malloc(sizeof(float) * NUMBER_A3_ROW);
-
     float *y = malloc(sizeof(float) * 10);
     float *dEdA1 = malloc(sizeof(float) * (NUMBER_A1_ROW * NUMBER_A1_COLUMN));
     float *dEdb1 = malloc(sizeof(float) * NUMBER_A1_ROW);
@@ -305,6 +308,12 @@ int main()
     float *A3 = malloc(sizeof(float) * (NUMBER_A3_ROW * NUMBER_A3_COLUMN));
     float *b3 = malloc(sizeof(float) * NUMBER_A3_ROW);
     int *index = malloc(sizeof(int) * N);
+
+    float *out_fc1 = malloc(sizeof(float) * NUMBER_A1_ROW);
+    float *out_relu1 = malloc(sizeof(float) * NUMBER_A1_ROW);
+    float *out_fc2 = malloc(sizeof(float) * NUMBER_A2_ROW);
+    float *out_relu2 = malloc(sizeof(float) * NUMBER_A2_ROW);
+    float *out_fc3 = malloc(sizeof(float) * NUMBER_A3_ROW);
 
     //平均勾配を定義
     float *dEdA1_ave = malloc(sizeof(float) * (NUMBER_A1_ROW * NUMBER_A1_COLUMN));
@@ -351,7 +360,7 @@ int main()
             {
 
                 // シャッフルした画像の番号: index[j * MINIBATCH + k]
-                backward6(A1, b1, A2, b2, A3, b3, train_x + 784 * index[j * MINIBATCH + k], train_y[index[j * MINIBATCH + k]], out_fc1, out_relu2, out_fc2, out_relu2, out_fc3, y, dEdA1, dEdb1, dEdA2, dEdb2, dEdA3, dEdb3);
+                backward6(A1, b1, A2, b2, A3, b3, train_x + 784 * index[j * MINIBATCH + k],out_fc1, out_relu1, out_fc2, out_relu2, out_fc3, train_y[index[j * MINIBATCH + k]], y, dEdA1, dEdb1, dEdA2, dEdb2, dEdA3, dEdb3);
 
                 //学習時の正解率を表示
 
@@ -416,7 +425,7 @@ int main()
             int ans = 0;
             float max_x = 0;
 
-            inference6(A1, b1, A2, b2, A3, b3, test_x + j * width * height, out_fc1, out_relu1, out_fc2, out_fc2, out_fc3, y);
+            inference6(A1, b1, A2, b2, A3, b3, test_x + j * width * height,out_fc1, out_relu1, out_fc2, out_relu2, out_fc3, y);
 
             for (int k = 0; k < 10; k++)
             {
@@ -427,9 +436,9 @@ int main()
                     ans = k;
                 }
             }
-            // printf("inf(%d):\n", j);
-            // print(1, 10, y);
-            // printf("%d, %d\n///\n", ans, test_y[j]);
+            printf("inf(%d):\n", j);
+            print(1, 10, y);
+            printf("%d, %d\n///\n", ans, test_y[j]);
             if (ans == test_y[j])
             {
                 sum++;
