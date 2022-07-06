@@ -13,6 +13,7 @@
 #define LEARN_RATE 0.1
 #define N 60000 //画像の枚数
 
+//学習したパラメータを保存
 void save(const char *filename, int m, int n,
           const float *A, const float *b)
 {
@@ -31,6 +32,7 @@ void save(const char *filename, int m, int n,
     }
 }
 
+//学習したパラメータを読み込む
 void load(const char *filename, int m, int n,
           float *A, float *b)
 {
@@ -47,7 +49,7 @@ void load(const char *filename, int m, int n,
     }
 }
 
-//行列を表示する (quiz1.c)
+//行列を表示する
 void print(int m, int n, const float *x)
 {
     for (int i = 0; i < m; i++)
@@ -61,6 +63,7 @@ void print(int m, int n, const float *x)
     }
 }
 
+// Octave形式で行列を表示
 void print_oct(int m, int n, const float *x, const char *name)
 {
     printf("%s = [ ", name);
@@ -76,11 +79,9 @@ void print_oct(int m, int n, const float *x, const char *name)
     printf("];\n");
 }
 
-//式 (1) を計算する (quiz2.cより)
+//fcを計算する
 void fc(int m, int n, const float *x, const float *A, const float *b, float *y)
 {
-    // print_oct(m, n, A, "A");
-
     // yはm行で、それぞれの要素について式を適用
     for (int i = 0; i < m; i++)
     {
@@ -93,7 +94,7 @@ void fc(int m, int n, const float *x, const float *A, const float *b, float *y)
     }
 }
 
-//式 (2) を計算 (quiz3.c)
+//ReLUを計算
 void relu(int n, const float *x, float *y)
 {
     int i;
@@ -102,7 +103,7 @@ void relu(int n, const float *x, float *y)
         y[i] = (x[i] > 0 ? x[i] : 0);
     }
 }
-//式(4) を計算(quiz4.c)
+//Softmaxを計算
 void softmax(int n, const float *x, float *y)
 {
     float max_x, sum;
@@ -131,7 +132,7 @@ void softmax(int n, const float *x, float *y)
     }
 }
 
-//推論 (quiz5.cより)
+//推論
 void inference6(const float *A1, const float *b1, const float *A2, const float *b2, const float *A3, const float *b3, const float *x, float *out_fc1, float *out_relu1, float *out_fc2, float *out_relu2, float *out_fc3, float *y)
 {
     // FC1
@@ -147,6 +148,7 @@ void inference6(const float *A1, const float *b1, const float *A2, const float *
     softmax(10, out_fc3, y);
 }
 
+//Softmaxの逆
 void softmaxwithloss_bwd(int n, const float *y, unsigned char t, float *dEdx)
 {
     //ここでxはSoftmaxに入ってくる10個の数、yは出力（10個）
@@ -165,7 +167,7 @@ void softmaxwithloss_bwd(int n, const float *y, unsigned char t, float *dEdx)
     }
 }
 
-// ReLUからFCへ(quiz9.c)
+// ReLUの逆
 void relu_bwd(int n, const float *x, const float *dEdy, float *dEdx) // dEdxはyと同じ大きさの配列へのポインタ
 {
     for (int i = 0; i < n; i++)
@@ -180,7 +182,7 @@ void relu_bwd(int n, const float *x, const float *dEdy, float *dEdx) // dEdxはy
         }
     }
 }
-//(quiz10.c)
+//fcの逆
 void fc_bwd(int m, int n, const float *x, const float *dEdy, const float *A, float *dEdA, float *dEdb, float *dEdx)
 {
 
@@ -206,6 +208,7 @@ void fc_bwd(int m, int n, const float *x, const float *dEdy, const float *A, flo
     }
 }
 
+//誤差逆伝搬
 void backward6(const float *A1, const float *b1, const float *A2, const float *b2, const float *A3, const float *b3, const float *x, float *out_fc1, float *out_relu1, float *out_fc2, float *out_relu2, float *out_fc3, unsigned char t,
                float *y, float *dEdA1, float *dEdb1, float *dEdA2, float *dEdb2, float *dEdA3, float *dEdb3)
 {
@@ -219,33 +222,17 @@ void backward6(const float *A1, const float *b1, const float *A2, const float *b
 
     inference6(A1, b1, A2, b2, A3, b3, x, out_fc1, out_relu1, out_fc2, out_relu2, out_fc3, y);
 
-    // test
-    // printf("t = %d\ninference3: \n", t);
-    // print_oct(10, 1, y, "y");
-
     // softmax
     softmaxwithloss_bwd(NUMBER_A3_ROW, y, t, dEdx3);
 
     // fc3
     fc_bwd(NUMBER_A3_ROW, NUMBER_A3_COLUMN, out_relu2, dEdx3, A3, dEdA3, dEdb3, dEdx2);
 
-    // test
-    // printf("softmaxwithloss_bwd:\n");
-    // print_oct(10, 1, dEdx, "dEdx");
-
     // relu2
     relu_bwd(NUMBER_A2_ROW, out_fc2, dEdx2, dEdx2);
 
-    // test
-    // printf("relu_bwd:\n");
-    // print_oct(10, 1, dEdx, "dEdx");
-
     // fc2
     fc_bwd(NUMBER_A2_ROW, NUMBER_A2_COLUMN, out_relu1, dEdx2, A2, dEdA2, dEdb2, dEdx1);
-
-    // test
-    // printf("fc_bwd:\n");
-    // print_oct(10, 1, dEdb, "dEdb");
 
     // relu1
     relu_bwd(NUMBER_A1_ROW, out_fc1, dEdx1, dEdx1);
@@ -359,6 +346,7 @@ int main(int argc, char *argv[])
 
     // モードの切り替え
 
+    //0: 学習
     if (*argv[1] == '0')
     {
 
@@ -384,6 +372,7 @@ int main(int argc, char *argv[])
             shuffle(N, index);
             int sum_learn = 0;
             float E_sum_learn = 0;
+
             //ミニバッチ学習
             for (int j = 0; j < (N / MINIBATCH); j++)
             {
@@ -434,9 +423,6 @@ int main(int argc, char *argv[])
                 }
                 // MINIBATCHで割って平均勾配を完成させる
 
-                // test
-                // printf("MINI_%d\n", j);
-
                 // A, bの更新(平均勾配にLEARN_RATEかけてもとの行列から引き算)
                 scale((NUMBER_A1_ROW * NUMBER_A1_COLUMN), (-LEARN_RATE / MINIBATCH), dEdA1_ave);
                 scale((NUMBER_A2_ROW * NUMBER_A2_COLUMN), (-LEARN_RATE / MINIBATCH), dEdA2_ave);
@@ -452,11 +438,13 @@ int main(int argc, char *argv[])
                 add(NUMBER_A2_ROW, dEdb2_ave, b2);
                 add(NUMBER_A3_ROW, dEdb3_ave, b3);
             }
+
             //学習時の損失関数と正解率をエポックごとに表示
             printf("\r損失関数(訓練データ)%d: %f\n", i + 1, E_sum_learn * 100.0 / N);
             printf("認識精度(訓練データ)%d: %f%%\n", i + 1, sum_learn * 100.0 / N);
-            //テストデータで推論
 
+
+            //テストデータで推論
             //正解率を表示
             int sum = 0;
             float E_sum = 0;
@@ -476,16 +464,11 @@ int main(int argc, char *argv[])
                         ans = k;
                     }
                 }
-                // printf("inf(%d):\n", j);
-                // print(1, 10, y);
-                // printf("%d, %d\n///\n", ans, test_y[j]);
+
                 if (ans == test_y[j])
                 {
                     sum++;
                 }
-
-                //損失関数
-                // printf("%f\n", cross_entropy_error(y, test_y[j]));
 
                 E_sum += cross_entropy_error(y, test_y[j]);
             }
@@ -497,9 +480,10 @@ int main(int argc, char *argv[])
         save("fc2.dat", 100, 50, A2, b2);
         save("fc3.dat", 10, 100, A3, b3);
     }
+    
+    //1: 推論
     else if (*argv[1] == '1')
     {
-        
         load(argv[2], 50, 784, A1, b1);
         load(argv[3], 100, 50, A2, b2);
         load(argv[4], 10, 100, A3, b3);
