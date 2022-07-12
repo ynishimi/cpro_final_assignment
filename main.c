@@ -1,6 +1,8 @@
 #include <time.h>
 #include "nn.h"
 
+#define PI 3.14159
+
 #define NUMBER_A1_ROW 50
 #define NUMBER_A1_COLUMN 784
 #define NUMBER_A2_ROW 100
@@ -79,7 +81,7 @@ void print_oct(int m, int n, const float *x, const char *name)
     printf("];\n");
 }
 
-//fcを計算する
+// fcを計算する
 void fc(int m, int n, const float *x, const float *A, const float *b, float *y)
 {
     // yはm行で、それぞれの要素について式を適用
@@ -94,7 +96,7 @@ void fc(int m, int n, const float *x, const float *A, const float *b, float *y)
     }
 }
 
-//ReLUを計算
+// ReLUを計算
 void relu(int n, const float *x, float *y)
 {
     int i;
@@ -103,7 +105,7 @@ void relu(int n, const float *x, float *y)
         y[i] = (x[i] > 0 ? x[i] : 0);
     }
 }
-//Softmaxを計算
+// Softmaxを計算
 void softmax(int n, const float *x, float *y)
 {
     float max_x, sum;
@@ -148,7 +150,7 @@ void inference6(const float *A1, const float *b1, const float *A2, const float *
     softmax(10, out_fc3, y);
 }
 
-//Softmaxの逆
+// Softmaxの逆
 void softmaxwithloss_bwd(int n, const float *y, unsigned char t, float *dEdx)
 {
     //ここでxはSoftmaxに入ってくる10個の数、yは出力（10個）
@@ -182,7 +184,7 @@ void relu_bwd(int n, const float *x, const float *dEdy, float *dEdx) // dEdxはy
         }
     }
 }
-//fcの逆
+// fcの逆
 void fc_bwd(int m, int n, const float *x, const float *dEdy, const float *A, float *dEdA, float *dEdb, float *dEdx)
 {
 
@@ -212,8 +214,6 @@ void fc_bwd(int m, int n, const float *x, const float *dEdy, const float *A, flo
 void backward6(const float *A1, const float *b1, const float *A2, const float *b2, const float *A3, const float *b3, const float *x, float *out_fc1, float *out_relu1, float *out_fc2, float *out_relu2, float *out_fc3, unsigned char t,
                float *y, float *dEdA1, float *dEdb1, float *dEdA2, float *dEdb2, float *dEdA3, float *dEdb3)
 {
-
-    // float *dEdx = malloc(sizeof(float) * NUMBER_A1_COLUMN);
 
     float *dEdx3 = malloc(sizeof(float) * NUMBER_A3_ROW);
     float *dEdx2 = malloc(sizeof(float) * NUMBER_A2_ROW);
@@ -276,6 +276,23 @@ void rand_init(int n, float *o)
     for (int i = 0; i < n; i++)
     {
         o[i] = (float)rand() / RAND_MAX * 2 - 1;
+    }
+}
+
+void nrand_init(int n, float *o, float ave, float dist)
+
+{
+    // o[i] を [-1:1] のガウス分布に従う乱数で初期化
+    float x, y, z;
+
+    for (int i = 0; i < n; i++)
+    {
+        x = ((float)rand() + 1.0) / (RAND_MAX + 1.0);
+        y = ((float)rand() + 1.0) / (RAND_MAX + 1.0);
+
+        z = sqrt(-2 * log(x)) * cos(2 * PI * y);
+
+        o[i] = ave + dist * z;
     }
 }
 
@@ -346,22 +363,22 @@ int main(int argc, char *argv[])
 
     // モードの切り替え
 
-    //0: 学習
+    // 0: 学習
     if (*argv[1] == '0')
     {
 
         // A, bの初期化
-        rand_init(NUMBER_A1_ROW * NUMBER_A1_COLUMN, A1);
-        rand_init(NUMBER_A2_ROW * NUMBER_A2_COLUMN, A2);
-        rand_init(NUMBER_A3_ROW * NUMBER_A3_COLUMN, A3);
-        rand_init(NUMBER_A1_ROW, b1);
-        rand_init(NUMBER_A2_ROW, b2);
-        rand_init(NUMBER_A3_ROW, b3);
+        nrand_init(NUMBER_A1_ROW * NUMBER_A1_COLUMN, A1, 0, sqrt(2.0 / NUMBER_A1_COLUMN));
+        nrand_init(NUMBER_A2_ROW * NUMBER_A2_COLUMN, A2, 0, sqrt(2.0 / NUMBER_A2_COLUMN));
+        nrand_init(NUMBER_A3_ROW * NUMBER_A3_COLUMN, A3, 0, sqrt(2.0 / NUMBER_A3_COLUMN));
+        init(NUMBER_A1_ROW, 0, b1);
+        init(NUMBER_A2_ROW, 0, b2);
+        init(NUMBER_A3_ROW, 0, b3);
 
         //エポック回数だけ以下の処理を繰り返す
         for (int i = 0; i < EPOCH; i++)
         {
-            printf("<Epoch%2d>\n", i);
+            printf("<Epoch%2d>\n", i + 1);
 
             // indexのならびかえ
 
@@ -443,7 +460,6 @@ int main(int argc, char *argv[])
             printf("\r損失関数(訓練データ)%d: %f\n", i + 1, E_sum_learn * 100.0 / N);
             printf("認識精度(訓練データ)%d: %f%%\n", i + 1, sum_learn * 100.0 / N);
 
-
             //テストデータで推論
             //正解率を表示
             int sum = 0;
@@ -474,14 +490,22 @@ int main(int argc, char *argv[])
             }
             printf("損失関数(テスト)%d: %f\n", i + 1, E_sum * 100.0 / test_count);
             printf("正解率(テスト)%d: %f%%\n///\n", i + 1, sum * 100.0 / test_count);
+
+            //損失関数が10より小さくなったとき訓練を打ち切ってパラメータを保存
+
+            if ((E_sum * 100.0 / test_count) < 10)
+            {
+                printf("finished learning\n");
+                break;
+            }
         }
 
         save("fc1.dat", 50, 784, A1, b1);
         save("fc2.dat", 100, 50, A2, b2);
         save("fc3.dat", 10, 100, A3, b3);
     }
-    
-    //1: 推論
+
+    // 1: 推論
     else if (*argv[1] == '1')
     {
         load(argv[2], 50, 784, A1, b1);
@@ -512,5 +536,34 @@ int main(int argc, char *argv[])
     {
         printf("invalid input\n");
     }
+
+    free(y);
+    free(dEdA1);
+    free(dEdb1);
+    free(dEdA2);
+    free(dEdb2);
+    free(dEdA3);
+    free(dEdb3);
+
+    free(A1);
+    free(b1);
+    free(A2);
+    free(b2);
+    free(A3);
+    free(b3);
+    free(index);
+
+    free(out_fc1);
+    free(out_relu1);
+    free(out_fc2);
+    free(out_relu2);
+    free(out_fc3);
+
+    free(dEdA1_ave);
+    free(dEdA2_ave);
+    free(dEdA3_ave);
+    free(dEdb1_ave);
+    free(dEdb2_ave);
+    free(dEdb3_ave);
     return 0;
 }
